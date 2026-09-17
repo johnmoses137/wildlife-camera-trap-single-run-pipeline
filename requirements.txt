@@ -1,0 +1,6 @@
+speciesnet
+pandas
+opencv-python
+matplotlib
+exifread
+tqdm

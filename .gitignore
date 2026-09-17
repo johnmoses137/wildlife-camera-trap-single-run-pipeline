@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Generated pipeline outputs
+test_output/
+*-output/
+batch_summary.csv
+annotated_images/
+Grouped_Images/
+Visualizations/
+cropped_images/
+crops/
+*_predictions.json
+predictions.csv
+meta_data_clustered.csv
+final_merged_predictions.csv
+
+# Local caches and operating-system files
+.matplotlib-cache/
+.DS_Store
+
+# Editors
+.vscode/
+.idea/

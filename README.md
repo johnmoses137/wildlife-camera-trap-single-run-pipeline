@@ -9,6 +9,18 @@ and final dataset merging.
 This repository is the automated companion to the original
 [step-by-step wildlife camera-trap classification project](https://github.com/johnmoses137/wildlife-camera-trap-classification).
 
+## Start here
+
+1. Select **Code → Download ZIP** on this page and extract the folder.
+2. Install Python 3.11 or 3.12 if it is not already installed.
+3. Open a terminal in the extracted folder. Follow the [installation commands](#installation)
+   for your operating system to create an environment and install the requirements.
+4. Run `python main.py --single-folder`. When prompted, enter the full path to
+   your image folder, then the full path to a **new output folder outside it**.
+
+You will see progress in the terminal. The completion message shows where the
+final CSV was saved. The first run needs internet access to download the model.
+
 ## Why this version exists
 
 The original project exposes each processing stage as a separate script. This
@@ -136,7 +148,6 @@ the same interpreter:
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 python -m pip check
-python -m speciesnet.scripts.run_model --help
 python main.py --help
 ```
 
@@ -160,8 +171,12 @@ Re-activate `.venv` when you open a new terminal.
 ### Interactive mode
 
 ```bash
-python main.py
+python main.py --single-folder
 ```
+
+This processes all images under the folder you enter as one dataset. The tool
+prompts for the input image folder and output folder. To process immediate child
+folders as separate datasets, run `python main.py` without `--single-folder`.
 
 ### Command-line mode
 

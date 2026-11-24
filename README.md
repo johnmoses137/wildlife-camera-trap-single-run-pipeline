@@ -12,7 +12,7 @@ This repository is the automated companion to the original
 ## Start here
 
 1. Select **Code → Download ZIP** on this page and extract the folder.
-2. Install Python 3.11 or 3.12 if it is not already installed.
+2. [Install Python 3.12](#2-install-python) if it is not already installed.
 3. Open a terminal in the extracted folder. Follow the [installation commands](#installation)
    for your operating system to create an environment and install the requirements.
 4. Run `python main.py --single-folder`. When prompted, enter the full path to
@@ -115,31 +115,55 @@ git clone https://github.com/johnmoses137/wildlife-camera-trap-single-run-pipeli
 cd wildlife-camera-trap-single-run-pipeline
 ```
 
-### 2. Create and activate a Python environment
+### 2. Install Python
 
-Install Python first if needed. Python 3.11 or 3.12 is a suitable starting point.
+If you already have Python 3.11 or 3.12, you can use it and skip the download.
+Otherwise, open the official [Python 3.12 download page](https://www.python.org/downloads/release/python-31210/):
+
+- **macOS:** Download the **macOS 64-bit universal2 installer**, open the `.pkg`
+  file, and follow the installer. Open a new Terminal window and check with
+  `python3.12 --version`.
+- **Windows:** Download the **Windows installer (64-bit)**, open it, select
+  **Add Python to PATH** on the first screen, then choose **Install Now**. Open
+  a new Command Prompt and check with `py -3.12 --version`.
+- **Linux:** Install Python 3.11 or 3.12 and its `venv` package using your
+  distribution's package manager. Check with `python3 --version`.
+
+The check should print the installed version. If it says the command was not
+found, finish the installation and open a new terminal before continuing.
+
+### 3. Create and activate a Python environment
+
 Use the commands for your operating system, from the project folder.
 
-macOS / Linux:
+macOS (Python 3.12 from the installer above):
 
 ```bash
-python3 --version
+python3.12 -m venv .venv
+source .venv/bin/activate
+```
+
+Linux (Python 3.11 or 3.12):
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Windows Command Prompt (with Python 3.11 installed):
+Windows Command Prompt (with Python 3.12 installed):
 
 ```bat
-py -3.11 --version
-py -3.11 -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\activate.bat
 ```
+
+If you already have Python 3.11, use `python3.11` on macOS or `py -3.11` on
+Windows in place of the 3.12 command above.
 
 Windows PowerShell uses `.venv\Scripts\Activate.ps1` for activation. If local
 PowerShell policy blocks activation, use Command Prompt instead.
 
-### 3. Install dependencies and check the commands
+### 4. Install dependencies and check the commands
 
 Use `python` inside the activated environment so installation and execution use
 the same interpreter:

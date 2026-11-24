@@ -10,6 +10,7 @@
 
 import argparse
 
+from pipeline.run_metrics import RunMetrics
 from config import get_config
 from pipeline.runner import run_batch_pipeline, run_pipeline
 
@@ -102,10 +103,11 @@ def main():
         config.final_output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # --- Run pipeline ---
-    if args.single_folder:
-        run_pipeline(config)
-    else:
-        run_batch_pipeline(config)
+    with RunMetrics(config.output_dir):
+        if args.single_folder:
+            run_pipeline(config)
+        else:
+            run_batch_pipeline(config)
 
 
 if __name__ == "__main__":

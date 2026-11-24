@@ -57,6 +57,7 @@ represented in the final dataset.
 - Optional site and camera identifiers
 - Parent-child tracking for cropped detections
 - Batch processing with per-dataset failure isolation and summaries
+- Elapsed processing time and sampled peak RAM, saved to `run_metrics.json`
 
 ## Repository structure
 
@@ -68,6 +69,7 @@ represented in the final dataset.
 ├── CHANGELOG.md               # Consolidation and reliability changes
 └── pipeline/
     ├── runner.py              # End-to-end orchestration
+    ├── run_metrics.py         # Elapsed time and process-tree memory reporting
     ├── speciesnet_runner.py   # SpeciesNet subprocess adapter
     ├── json_to_csv.py         # Prediction JSON to CSV conversion
     ├── annotate.py            # Bounding-box image annotation
@@ -90,39 +92,81 @@ longer and requires internet access.
 
 ## Installation
 
+### 1. Download the project
+
+On this GitHub page, select **Code**, then **Download ZIP**, and extract the ZIP.
+Keep `main.py`, `config.py`, `requirements.txt`, and `pipeline/` together.
+Open a terminal in the extracted folder. Git users can instead run:
+
 ```bash
 git clone https://github.com/johnmoses137/wildlife-camera-trap-single-run-pipeline.git
 cd wildlife-camera-trap-single-run-pipeline
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
 ```
 
-On Windows, activate the environment with:
+### 2. Create and activate a Python environment
 
-```powershell
-.venv\Scripts\activate
-```
+Install Python first if needed. Python 3.11 or 3.12 is a suitable starting point.
+Use the commands for your operating system, from the project folder.
 
-Confirm that SpeciesNet is available:
+macOS / Linux:
 
 ```bash
-python3 -m speciesnet.scripts.run_model --help
+python3 --version
+python3 -m venv .venv
+source .venv/bin/activate
 ```
+
+Windows Command Prompt (with Python 3.11 installed):
+
+```bat
+py -3.11 --version
+py -3.11 -m venv .venv
+.venv\Scripts\activate.bat
+```
+
+Windows PowerShell uses `.venv\Scripts\Activate.ps1` for activation. If local
+PowerShell policy blocks activation, use Command Prompt instead.
+
+### 3. Install dependencies and check the commands
+
+Use `python` inside the activated environment so installation and execution use
+the same interpreter:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip check
+python -m speciesnet.scripts.run_model --help
+python main.py --help
+```
+
+The requirements pin **SpeciesNet 5.0.5** because this pipeline reads its
+image-level `prediction` and `prediction_score` fields. SpeciesNet 5.0.6 changed
+to a per-detection classification format. Do not upgrade SpeciesNet independently
+until the pipeline supports that format. Pandas is constrained to the 2.x series
+for the metadata timestamp handling. These constraints are not a full lock of
+every transitive dependency.
+
+References: [SpeciesNet 5.0.5 package documentation](https://pypi.org/project/speciesnet/5.0.5/)
+and [SpeciesNet output documentation](https://pypi.org/project/speciesnet/).
+
+A CPU can run inference. A compatible NVIDIA GPU is optional; follow
+[SpeciesNet's GPU setup instructions](https://github.com/google/cameratrapai#using-gpus)
+if you need acceleration. The first run needs internet to download model files.
+Re-activate `.venv` when you open a new terminal.
 
 ## Usage
 
 ### Interactive mode
 
 ```bash
-python3 main.py
+python main.py
 ```
 
 ### Command-line mode
 
 ```bash
-python3 main.py \
+python main.py \
   --images "/path/to/camera-trap/images" \
   --output "/path/to/output"
 ```
@@ -130,7 +174,7 @@ python3 main.py \
 ### Recommended research-data command
 
 ```bash
-python3 main.py \
+python main.py \
   --images "/path/to/images" \
   --output "/path/to/output" \
   --single-folder \
@@ -139,6 +183,15 @@ python3 main.py \
   --cluster-minutes 5 \
   --min-detection-confidence 0.1
 ```
+
+The multi-line commands above use macOS/Linux shell syntax. On Windows, enter
+the command on one line with your own image/output paths.
+
+For the first run, use a few JPG, JPEG, or PNG images with unique filenames and a
+**new output folder outside the image directory**. Generated image folders are
+not cleared between runs, so reusing an output folder can mix old and new files.
+The completion message prints the final CSV path. Open that CSV and inspect the
+annotated images before processing a larger dataset.
 
 ## Options
 
@@ -185,6 +238,7 @@ own output directory and a `batch_summary.csv` is produced.
 
 ```text
 output/
+├── run_metrics.json
 ├── predictions.csv
 ├── meta_data_clustered.csv
 ├── final_merged_predictions.csv       # When crops are reclassified
@@ -234,6 +288,18 @@ This integration test is not a biological accuracy benchmark. Confidence
 thresholds should be validated against manually reviewed images before use in a
 scientific study.
 
+On October 23, 2026, the updated requirements were installed in a clean Python
+3.12.14 environment on macOS (Apple Silicon). `pip check` passed. A two-image
+test with cached model weights completed both original and crop inference,
+metadata inheritance, and the final merge: two original rows plus one crop row.
+That test used a deliberately low `--min-detection-confidence 0.01` to exercise
+the crop path; the default remains `0.1`.
+
+The metrics report recorded completion and correctly flagged incomplete memory
+measurement because the test sandbox blocks child-process discovery. Five
+regression tests passed; the live child-discovery test was skipped for that OS
+restriction. Windows and Linux installation were not executed in this check.
+
 ## Notes and limitations
 
 - Accuracy varies by geography, species, image quality, and camera placement.
@@ -241,6 +307,45 @@ scientific study.
 - Filesystem timestamps may reflect copying or downloading, not capture time.
 - Review low-confidence predictions and validate ecological conclusions against
   expert-labeled data.
+- Use unique image filenames within each dataset, including nested folders.
+  Several output paths and metadata joins use the filename rather than a full path.
+
+## Run time and memory usage
+
+Each `python main.py` run prints elapsed processing time and sampled peak RAM,
+and writes `run_metrics.json` in the output folder. Measurement starts after
+input prompts, path validation, and output-folder setup. A batch gets one report
+covering all its datasets and crop passes.
+
+RAM is sampled every 0.2 seconds across the main Python process and its recursive
+child processes, including SpeciesNet. This is the peak sampled sum of resident
+memory (RSS), not GPU memory or total computer RAM usage. Shared pages can be
+counted more than once, and peaks between samples can be missed.
+
+The report records `complete`, `failed`, or `interrupted` and also appears after
+a pipeline exception or Ctrl+C. It does not suppress the original error.
+Force-killing the process or shutting down the computer prevents final reporting.
+Runs replace an existing `run_metrics.json` in the same output folder. MiB and
+GiB use powers of 1024.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| `main.py` cannot be found | Open the terminal in the extracted project folder. |
+| A Python module is missing | Activate `.venv`, then install requirements with `python -m pip`. |
+| Prediction labels are empty after an upgrade | Check `python -m pip show speciesnet`; reinstall the pinned requirements. |
+| A first run pauses on downloads | Keep internet available until the model files finish downloading. |
+| Old images appear in results | Use a fresh output folder. |
+| Capture times do not match camera times | Inspect `timestamp_source`; `FileModifyDate` is a filesystem fallback. |
+
+## Development checks
+
+With the requirements installed:
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ## Related project
 

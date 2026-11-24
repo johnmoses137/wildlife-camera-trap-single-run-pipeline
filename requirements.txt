@@ -1,6 +1,8 @@
-speciesnet
-pandas
+# Preserve the image-level prediction schema consumed by this pipeline.
+speciesnet==5.0.5
+pandas>=2.0,<3
 opencv-python
 matplotlib
 exifread
 tqdm
+psutil>=5.9

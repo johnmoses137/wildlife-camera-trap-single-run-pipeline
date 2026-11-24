@@ -17,6 +17,7 @@ crops/
 predictions.csv
 meta_data_clustered.csv
 final_merged_predictions.csv
+run_metrics.json
 
 # Local caches and operating-system files
 .matplotlib-cache/
